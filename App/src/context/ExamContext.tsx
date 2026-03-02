@@ -129,38 +129,42 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
   const saveAndNext = useCallback(() => {
     if (!currentQuestion) return;
     const qId = currentQuestion.question_id;
-    const hasOption = examState[qId]?.selectedOption !== null;
 
-    setExamState((prev) => ({
-      ...prev,
-      [qId]: { 
-        ...prev[qId], 
-        status: hasOption ? 'ANSWERED' : 'VISITED' 
-      }
-    }));
+    setExamState((prev) => {
+      const hasOption = prev[qId]?.selectedOption !== null;
+      return {
+        ...prev,
+        [qId]: { 
+          ...prev[qId], 
+          status: hasOption ? 'ANSWERED' : 'VISITED' 
+        }
+      };
+    });
 
     if (currentIdx < allQuestions.length - 1) {
       goToQuestion(currentIdx + 1);
     }
-  }, [currentQuestion, currentIdx, allQuestions, examState, goToQuestion]);
+  }, [currentQuestion, currentIdx, allQuestions, goToQuestion]);
 
   const markForReview = useCallback(() => {
     if (!currentQuestion) return;
     const qId = currentQuestion.question_id;
-    const hasOption = examState[qId]?.selectedOption !== null;
 
-    setExamState((prev) => ({
-      ...prev,
-      [qId]: { 
-        ...prev[qId], 
-        status: hasOption ? 'ANSWERED_MARKED' : 'MARKED' 
-      }
-    }));
+    setExamState((prev) => {
+      const hasOption = prev[qId]?.selectedOption !== null;
+      return {
+        ...prev,
+        [qId]: { 
+          ...prev[qId], 
+          status: hasOption ? 'ANSWERED_MARKED' : 'MARKED' 
+        }
+      };
+    });
 
     if (currentIdx < allQuestions.length - 1) {
       goToQuestion(currentIdx + 1);
     }
-  }, [currentQuestion, currentIdx, allQuestions, examState, goToQuestion]);
+  }, [currentQuestion, currentIdx, allQuestions, goToQuestion]);
 
   const jumpToSubject = useCallback((subjectKey: string) => {
     const firstIdx = allQuestions.findIndex(q => `${q.part} - ${q.subject}` === subjectKey);
