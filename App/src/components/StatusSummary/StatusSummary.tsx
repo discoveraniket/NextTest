@@ -1,4 +1,5 @@
 import { useExam } from '../../context/ExamContext';
+import { Check } from 'lucide-react';
 
 export const StatusSummary = () => {
   const { examState, allQuestions } = useExam();
@@ -35,26 +36,43 @@ export const StatusSummary = () => {
   });
 
   const items = [
-    { label: 'Answered', count: summary.answered, color: 'bg-[#4caf50]' },
-    { label: 'Not Answered', count: summary.notAnswered, color: 'bg-[#f44336]' },
-    { label: 'Not Visited', count: summary.notVisited, color: 'bg-[#ffffff] border border-gray-300' },
-    { label: 'Marked for Review', count: summary.marked, color: 'bg-[#9c27b0]' },
-    { label: 'Answered & Marked for Review', count: summary.answeredMarked, color: 'bg-[#9c27b0] relative after:content-[""] after:absolute after:bottom-0 after:right-0 after:w-3 after:h-3 after:bg-green-500 after:rounded-full' },
+    { label: 'Answered', count: summary.answered, color: 'bg-[#4caf50] text-white', icon: null },
+    { label: 'Not Answered', count: summary.notAnswered, color: 'bg-[#f44336] text-white', icon: null },
+    { label: 'Not Visited', count: summary.notVisited, color: 'bg-[#ffffff] border border-gray-300 text-black', icon: null },
+    { label: 'Marked for Review', count: summary.marked, color: 'bg-[#9c27b0] text-white', icon: null },
+    { 
+      label: 'Answered & Marked for Review', 
+      count: summary.answeredMarked, 
+      color: 'bg-[#9c27b0] text-white relative', 
+      icon: <Check className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full text-white border border-white p-[1px]" strokeWidth={4} /> 
+    },
   ];
 
   return (
-    <div className="p-4 border-t border-gray-200 bg-gray-50">
-      <h3 className="text-sm font-bold mb-3 text-gray-700 uppercase tracking-wider">Question Summary</h3>
-      <div className="grid grid-cols-2 gap-3">
+    <div className="p-4 border-t border-gray-200 bg-gray-50 flex flex-col gap-4">
+      <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Question Summary</h3>
+      <div className="grid grid-cols-2 gap-4">
         {items.map((item) => (
-          <div key={item.label} className="flex items-center gap-2">
-            <div className={`w-6 h-6 rounded-sm flex-shrink-0 flex items-center justify-center text-[10px] font-bold ${item.color}`}>
+          <div key={item.label} className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded shadow-sm flex-shrink-0 flex items-center justify-center text-[14px] font-bold border border-black/5 ${item.color}`}>
               {item.count}
+              {item.icon}
             </div>
-            <span className="text-[11px] leading-tight text-gray-600">{item.label}</span>
+            <span className="text-[12px] font-medium leading-tight text-gray-700">{item.label}</span>
           </div>
         ))}
       </div>
+
+      <button 
+        className="mt-2 w-full bg-[#f0f0f0] hover:bg-[#e0e0e0] text-gray-800 font-bold py-3 px-4 rounded border border-gray-300 shadow-sm transition-all text-sm uppercase tracking-wide cursor-pointer active:scale-95"
+        onClick={() => {
+          if (window.confirm("Are you sure you want to submit the exam?")) {
+            alert("Exam Submitted successfully!");
+          }
+        }}
+      >
+        Submit
+      </button>
     </div>
   );
 };
