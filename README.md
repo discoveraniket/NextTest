@@ -1,4 +1,4 @@
-# CBT Simulator
+# NextTest
 
 A highly responsive Computer-Based Test (CBT) simulator built with React, Vite, and Tailwind CSS (v4). It replicates the standard interface used in exams like TCS iON and NTA.
 
