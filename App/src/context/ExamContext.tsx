@@ -1,30 +1,25 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
-import examDataRaw from '../questions.json';
+import { supabase } from '../lib/supabase';
 import type { 
-  ExamData, 
   ExamState, 
   Question,
+  ExamData,
+  FlattenedQuestion
 } from '../types';
 
-const examData = examDataRaw as unknown as ExamData;
-
-interface FlattenedQuestion {
-  part: string;
-  subject: string;
-  question: Question;
-}
-
 interface ExamContextType {
-  examData: ExamData;
+  examData: ExamData | null;
   allQuestions: FlattenedQuestion[];
   currentIdx: number;
-  currentQuestion: Question;
+  currentQuestion: Question | null;
   currentPart: string;
   currentSubject: string;
   examState: ExamState;
   timeLeft: number;
   isInitialized: boolean;
   isSubmitted: boolean;
+  isLoading: boolean;
+  initializeSession: (sessionId: string) => Promise<void>;
   goToQuestion: (idx: number) => void;
   selectOption: (option: string) => void;
   clearResponse: () => void;
@@ -32,54 +27,117 @@ interface ExamContextType {
   markForReview: () => void;
   jumpToSubject: (subjectKey: string) => void;
   submitExam: () => void;
+  resetExam: () => void;
 }
 
 const ExamContext = createContext<ExamContextType | undefined>(undefined);
 
 export const ExamProvider = ({ children }: { children: ReactNode }) => {
   // --- Core State ---
+  const [examData, setExamData] = useState<ExamData | null>(null);
+  const [allQuestions, setAllQuestions] = useState<FlattenedQuestion[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [examState, setExamState] = useState<ExamState>({});
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(examData?.exam_details?.duration_minutes * 60 || 5400);
+  const [isLoading, setIsLoading] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
 
-  // --- Data Flattening for Navigation ---
-  const allQuestions = useMemo(() => {
-    const list: FlattenedQuestion[] = [];
-    if (!examData || !examData.sections) return list;
-    
-    Object.entries(examData.sections).forEach(([partName, subjects]) => {
-      Object.entries(subjects).forEach(([subjectName, questions]) => {
-        questions.forEach((q) => {
-          list.push({ part: partName, subject: subjectName, question: q });
+  // --- Actions ---
+  const initializeSession = useCallback(async (sessionId: string) => {
+    setIsLoading(true);
+    try {
+      // 1. Fetch Session & Exam details
+      const { data: session, error: sError } = await supabase
+        .from('exam_sessions')
+        .select('*, exams(name)')
+        .eq('id', sessionId)
+        .single();
+
+      if (sError) throw sError;
+
+      const formattedExamData: ExamData = {
+        exam_details: {
+          name: session.exams.name,
+          year: session.year.toString(),
+          duration_minutes: session.duration_minutes,
+          correct_answer_weightage: session.correct_marks,
+          negative_marking: session.negative_marks.toString()
+        }
+      };
+
+      // 2. Fetch Subjects & Questions
+      const { data: subjects, error: subError } = await supabase
+        .from('subjects')
+        .select('name, questions(*)')
+        .eq('session_id', sessionId)
+        .order('display_order', { ascending: true });
+
+      if (subError) throw subError;
+
+      const flattened: FlattenedQuestion[] = [];
+      const initialState: ExamState = {};
+
+      subjects.forEach((sub: any) => {
+        sub.questions.forEach((q: any) => {
+          const questionObj: Question = {
+            question_id: q.id,
+            question: q.content,
+            options: q.options,
+            correct_answer: q.correct_answer
+          };
+          
+          flattened.push({
+            part: 'Section A', // Default for now
+            subject: sub.name,
+            question: questionObj
+          });
+
+          initialState[q.id] = {
+            status: 'NOT_VISITED',
+            selectedOption: null
+          };
         });
       });
-    });
-    return list;
+
+      // Mark first question visited
+      if (flattened.length > 0) {
+        initialState[flattened[0].question.question_id].status = 'VISITED';
+      }
+
+      setExamData(formattedExamData);
+      setAllQuestions(flattened);
+      setExamState(initialState);
+      setTimeLeft(session.duration_minutes * 60);
+      setCurrentIdx(0);
+      setIsSubmitted(false);
+      setIsInitialized(true);
+    } catch (err) {
+      console.error('Failed to initialize exam:', err);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // --- Initialization ---
-  useEffect(() => {
-    if (allQuestions.length > 0 && !isInitialized) {
-      const initialState: ExamState = {};
-      allQuestions.forEach(({ question }) => {
-        initialState[question.question_id] = {
-          status: 'NOT_VISITED',
-          selectedOption: null,
-        };
+  const resetExam = useCallback(() => {
+    setExamState((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((id: any) => {
+        next[id as any] = { status: 'NOT_VISITED', selectedOption: null };
       });
-      // Mark the first question as visited
-      const firstQId = allQuestions[0].question.question_id;
-      initialState[firstQId].status = 'VISITED';
-      setExamState(initialState);
-      setIsInitialized(true);
-    }
-  }, [allQuestions, isInitialized]);
+      if (allQuestions.length > 0) {
+        next[allQuestions[0].question.question_id].status = 'VISITED';
+      }
+      return next;
+    });
+    setCurrentIdx(0);
+    setTimeLeft((examData?.exam_details?.duration_minutes || 0) * 60);
+    setIsSubmitted(false);
+  }, [allQuestions, examData]);
 
   // --- Timer ---
   useEffect(() => {
-    if (isSubmitted) return; // Stop timer on submission
+    if (!isInitialized || isSubmitted) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -91,15 +149,15 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [isSubmitted]);
+  }, [isInitialized, isSubmitted]);
 
   // --- Derived State ---
-  const currentEntry = allQuestions[currentIdx];
-  const currentQuestion = currentEntry?.question;
-  const currentPart = currentEntry?.part;
-  const currentSubject = currentEntry?.subject;
+  const currentEntry = allQuestions[currentIdx] || null;
+  const currentQuestion = currentEntry?.question || null;
+  const currentPart = currentEntry?.part || '';
+  const currentSubject = currentEntry?.subject || '';
 
-  // --- Actions ---
+  // --- Exam Actions (Standard CBT Logic) ---
   const goToQuestion = useCallback((idx: number) => {
     if (isSubmitted || idx < 0 || idx >= allQuestions.length) return;
     
@@ -205,6 +263,8 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
     timeLeft,
     isInitialized,
     isSubmitted,
+    isLoading,
+    initializeSession,
     goToQuestion,
     selectOption,
     clearResponse,
@@ -212,6 +272,7 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
     markForReview,
     jumpToSubject,
     submitExam,
+    resetExam,
   };
 
   return <ExamContext.Provider value={value}>{children}</ExamContext.Provider>;

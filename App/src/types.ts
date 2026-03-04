@@ -1,19 +1,18 @@
 export interface OptionSet {
-  A: string;
-  B: string;
-  C: string;
-  D: string;
+  [key: string]: string;
 }
 
 export interface Question {
-  question_id: number;
+  question_id: string | number;
   question: string;
   options: OptionSet;
   correct_answer: string;
 }
 
-export interface Section {
-  [subject: string]: Question[];
+export interface FlattenedQuestion {
+  part: string;
+  subject: string;
+  question: Question;
 }
 
 export interface ExamData {
@@ -23,9 +22,6 @@ export interface ExamData {
     duration_minutes: number;
     correct_answer_weightage: number;
     negative_marking: string;
-  };
-  sections: {
-    [part: string]: Section;
   };
 }
 
@@ -42,5 +38,5 @@ export interface QuestionState {
 }
 
 export interface ExamState {
-  [questionId: number]: QuestionState;
+  [questionId: string]: QuestionState;
 }

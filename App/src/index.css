@@ -42,7 +42,7 @@ body {
 }
 
 @media (min-width: 768px) {
-  body {
+  body:not(:has(.result-page)) {
     overflow: hidden;
   }
 }
