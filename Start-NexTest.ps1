@@ -1,5 +1,5 @@
-# CBT Simulator One-Click Launcher
-Write-Host "Starting CBT Exam Simulator..." -ForegroundColor Cyan
+# NexTest One-Click Launcher
+Write-Host "Starting NexTest Exam Simulator..." -ForegroundColor Cyan
 
 # Navigate to the App directory
 cd App

@@ -1,5 +1,5 @@
 @echo off
-echo Running CBT Simulator Test Suite...
+echo Running NexTest Suite...
 cd App
 npm run test -- --run
 pause

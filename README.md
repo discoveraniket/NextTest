@@ -1,11 +1,11 @@
-# NextTest
+# NexTest
 
 A highly responsive Computer-Based Test (CBT) simulator built with React, Vite, and Tailwind CSS (v4). It replicates the standard interface used in exams like TCS iON and NTA.
 
 ## ✨ Features
 
 - **Standard Interface**: 5-status color-coded question palette.
-- **Dynamic Content**: Data-driven question loading from `questions.json`.
+- **Dynamic Content**: Data-driven question loading from Supabase (PostgreSQL).
 - **Exam Logic**: Supports Save & Next, Mark for Review, and Clear Response.
 - **Real-time Summary**: Live table showing question status counts.
 - **Robust Testing**: Comprehensive test suite using Vitest and React Testing Library.
@@ -14,6 +14,7 @@ A highly responsive Computer-Based Test (CBT) simulator built with React, Vite, 
 ## 🛠️ Tech Stack
 
 - **Frontend**: React (v19), Vite, Tailwind CSS (v4)
+- **Backend**: Supabase (PostgreSQL)
 - **State Management**: React Context API
 - **Icons**: Lucide React
 - **Testing**: Vitest, React Testing Library
@@ -27,7 +28,7 @@ A highly responsive Computer-Based Test (CBT) simulator built with React, Vite, 
 1. Clone the repository.
 2. Run the one-click launcher (Windows):
    ```powershell
-   ./Start-CBT-Simulator.ps1
+   ./Start-NexTest.ps1
    ```
    *Or manually:*
    ```bash
@@ -37,7 +38,7 @@ A highly responsive Computer-Based Test (CBT) simulator built with React, Vite, 
    ```
 
 ### Running Tests
-- Use the root batch file: `runTests.bat`
+- Use the root batch file: `Run-Tests.bat`
 - Or manually: `cd App && npm test`
 
 ## 🌍 Hosting on Render.com
@@ -45,10 +46,9 @@ A highly responsive Computer-Based Test (CBT) simulator built with React, Vite, 
 To host this as a **Static Site** on [Render](https://render.com/):
 
 1. **Connect** your GitHub repository.
-2. **Build Filter**: Set to `App` (optional, but good for root projects).
-3. **Build Command**: `cd App && npm install && npm run build`
-4. **Publish Directory**: `App/dist`
-5. **Add Environment Variable**: `NODE_VERSION` set to `20` or higher.
+2. **Build Command**: `cd App && npm install && npm run build`
+3. **Publish Directory**: `App/dist`
+4. **Environment Variables**: Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 
 ## 📄 License
 This project is licensed under the MIT License.
