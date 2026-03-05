@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "description": "NexTest: High-Performance CBT Exam Simulator",
   "scripts": {
-    "install:all": "cd App && npm install",
-    "build": "cd App && npm run build",
+    "setup": "npm install && cd App && npm install",
+    "dev": "cd App && npm run dev",
     "test": "cd App && npm run test -- --run",
-    "dev": "cd App && npm run dev"
+    "build": "cd App && npm run build"
   },
   "keywords": [],
   "author": "",

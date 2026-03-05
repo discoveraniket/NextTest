@@ -28,6 +28,8 @@
 - [x] Established **Supabase Relational Schema** (Exams, Sessions, Subjects, Questions).
 - [x] Implemented **Data Seeder** utility to migrate JSON data to the cloud.
 - [x] Centralized TypeScript interfaces in `types.ts` for build stability.
+- [x] **Real Authentication**: Integrated Supabase Auth (Email/Password) with protected routes.
+- [x] **Result Storage**: Implemented logic to save `attempts` and granular `attempt_responses`.
 
 ### UI, UX & Rebranding
 - [x] Full rebranding to **NexTest**: Browser title, scripts (`Start-NexTest.ps1`), and internal references.
@@ -35,25 +37,22 @@
 - [x] Implemented **Instructions Page** with live marking scheme fetching.
 - [x] Made the entire application **Mobile Responsive**.
 - [x] Refactored **Result Dashboard** into a tabbed interface with Subject-wise analytics.
+- [x] **Attempt History**: Implemented real-time history tracking on the Dashboard.
 
 ### Build & Stability
 - [x] Resolved all TypeScript `null` safety and type mismatch errors.
 - [x] Verified production build (`tsc -b && vite build`) passes successfully.
 - [x] Enabled scrolling on Result page for both Desktop and Mobile.
+- [x] **Roll Number Removal**: Refactored codebase to rely solely on Name/Email for a cleaner UX.
 
 ---
 
 ## 🚀 Feature Roadmap (Updated)
 
-### Phase 1: Persistence & Authentication (Current Focus)
-- [ ] **Real Authentication**: Replace the mock login form with Supabase Auth (Email/Password).
-- [ ] **Result Storage**: Implement `saveAttempt` to store `examState` and scores in the `attempts` and `attempt_responses` tables.
-- [ ] **User Profiles**: Link logged-in users to their `profiles` table to display real names/rolls.
-
-### Phase 2: User History & Experience
-- [ ] **Attempt History**: Show a list of past exam scores on the Dashboard.
+### Phase 2: User History & Experience (Current Focus)
 - [ ] **Review Mode**: Allow users to click on a past attempt to see their "Question Paper" breakdown.
 - [ ] **Session Recovery**: Auto-save progress to LocalStorage to prevent data loss on accidental refresh.
+- [ ] **Leaderboard**: Optional public ranking for specific exam sessions.
 
 ### Phase 3: Analytics & Insights
 - [ ] **Visual Trends**: Performance charts showing growth across multiple sessions.

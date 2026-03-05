@@ -10,12 +10,13 @@ export const PaletteSidebar: React.FC = () => {
     currentSubject, 
     allQuestions, 
     examState, 
-    goToQuestion 
+    goToQuestion,
+    userProfile
   } = useExam();
 
   return (
     <aside className="w-full md:w-[350px] flex flex-col bg-sidebar-bg border-l border-border-color h-auto md:h-full overflow-hidden">
-      <CandidateProfile name="Joymalya Majee" rollNo="000-420" />
+      <CandidateProfile name={userProfile?.full_name || 'Candidate'} />
       
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
         <div className="bg-primary-blue text-white py-2 px-4 rounded shadow-sm text-sm font-medium">

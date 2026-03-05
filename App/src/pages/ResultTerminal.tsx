@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export const ResultTerminal = () => {
-  const { examData, allQuestions, examState, resetExam } = useExam();
+  const { examData, allQuestions, examState, resetExam, userProfile } = useExam();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'summary' | 'details'>('summary');
 
@@ -74,7 +74,7 @@ export const ResultTerminal = () => {
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div>
             <h1 className="text-3xl font-black uppercase tracking-tight italic mb-2">Examination Report</h1>
-            <p className="opacity-80 font-medium">Candidate: Joymalya Majee | Roll: 000-420</p>
+            <p className="opacity-80 font-medium">Candidate: {userProfile?.full_name || 'Anonymous'}</p>
             <div className="mt-4 inline-block bg-white/20 px-4 py-1 rounded text-xs font-bold uppercase tracking-widest border border-white/30">
               {examData.exam_details.name}
             </div>

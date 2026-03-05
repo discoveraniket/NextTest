@@ -12,6 +12,7 @@ import type {
 interface ExamContextType {
   examData: ExamData | null;
   allQuestions: FlattenedQuestion[];
+  userProfile: { full_name: string } | null;
   currentIdx: number;
   currentQuestion: Question | null;
   currentPart: string;
@@ -38,22 +39,32 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
   // --- Core State ---
   const [examData, setExamData] = useState<ExamData | null>(null);
   const [allQuestions, setAllQuestions] = useState<FlattenedQuestion[]>([]);
+  const [userProfile, setUserProfile] = useState<{ full_name: string } | null>(null);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [examState, setExamState] = useState<ExamState>({});
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   // --- Actions ---
-  const initializeSession = useCallback(async (sessionId: string) => {
+  const initializeSession = useCallback(async (id: string) => {
     setIsLoading(true);
+    setSessionId(id);
     try {
-      // 1. Fetch Session & Exam details
+      // 1. Check Auth & Fetch Profile
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: prof } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+        if (prof) setUserProfile(prof);
+      }
+
+      // 2. Fetch Session & Exam details
       const { data: session, error: sError } = await supabase
         .from('exam_sessions')
         .select('*, exams(name)')
-        .eq('id', sessionId)
+        .eq('id', id)
         .single();
 
       if (sError) throw sError;
@@ -68,11 +79,11 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
         }
       };
 
-      // 2. Fetch Subjects & Questions
+      // 3. Fetch Subjects & Questions
       const { data: subjects, error: subError } = await supabase
         .from('subjects')
         .select('name, questions(*)')
-        .eq('session_id', sessionId)
+        .eq('session_id', id)
         .order('display_order', { ascending: true });
 
       if (subError) throw subError;
@@ -90,7 +101,7 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
           };
           
           flattened.push({
-            part: 'Section A', // Default for now
+            part: 'Section A', 
             subject: sub.name,
             question: questionObj
           });
@@ -102,7 +113,6 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
         });
       });
 
-      // Mark first question visited
       if (flattened.length > 0) {
         initialState[flattened[0].question.question_id].status = 'VISITED';
       }
@@ -137,111 +147,74 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
     setIsSubmitted(false);
   }, [allQuestions, examData]);
 
-  // --- Timer ---
-  useEffect(() => {
-    if (!isInitialized || isSubmitted) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          setIsSubmitted(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isInitialized, isSubmitted]);
-
-  // --- Derived State ---
-  const currentEntry = allQuestions[currentIdx] || null;
-  const currentQuestion = currentEntry?.question || null;
-  const currentPart = currentEntry?.part || '';
-  const currentSubject = currentEntry?.subject || '';
-
-  // --- Exam Actions (Standard CBT Logic) ---
   const goToQuestion = useCallback((idx: number) => {
     if (isSubmitted || idx < 0 || idx >= allQuestions.length) return;
-    
     setCurrentIdx(idx);
     const qId = allQuestions[idx].question.question_id;
-    
     setExamState((prev) => {
       const qState = prev[qId];
       if (qState && qState.status === 'NOT_VISITED') {
-        const newState: QuestionState = { ...qState, status: 'VISITED' as QuestionStatus };
-        return {
-          ...prev,
-          [qId]: newState
-        };
+        return { ...prev, [qId]: { ...qState, status: 'VISITED' } };
       }
       return prev;
     });
   }, [allQuestions, isSubmitted]);
 
   const selectOption = useCallback((option: string) => {
-    if (isSubmitted || !currentQuestion) return;
-    const qId = currentQuestion.question_id.toString();
+    if (isSubmitted) return;
+    const currentEntry = allQuestions[currentIdx];
+    if (!currentEntry) return;
+    const qId = currentEntry.question.question_id.toString();
     setExamState((prev) => ({
       ...prev,
       [qId]: { ...prev[qId], selectedOption: option }
     }));
-  }, [currentQuestion, isSubmitted]);
+  }, [allQuestions, currentIdx, isSubmitted]);
 
   const clearResponse = useCallback(() => {
-    if (isSubmitted || !currentQuestion) return;
-    const qId = currentQuestion.question_id.toString();
+    if (isSubmitted) return;
+    const currentEntry = allQuestions[currentIdx];
+    if (!currentEntry) return;
+    const qId = currentEntry.question.question_id.toString();
     setExamState((prev) => ({
       ...prev,
-      [qId]: { 
-        ...prev[qId], 
-        selectedOption: null,
-        status: 'VISITED' as QuestionStatus
-      }
+      [qId]: { ...prev[qId], selectedOption: null, status: 'VISITED' }
     }));
-  }, [currentQuestion, isSubmitted]);
+  }, [allQuestions, currentIdx, isSubmitted]);
 
   const saveAndNext = useCallback(() => {
-    if (isSubmitted || !currentQuestion) return;
-    const qId = currentQuestion.question_id.toString();
+    if (isSubmitted) return;
+    const currentEntry = allQuestions[currentIdx];
+    if (!currentEntry) return;
+    const qId = currentEntry.question.question_id.toString();
 
     setExamState((prev) => {
       const hasOption = prev[qId]?.selectedOption !== null;
       const newStatus: QuestionStatus = hasOption ? 'ANSWERED' : 'VISITED';
-      return {
-        ...prev,
-        [qId]: { 
-          ...prev[qId], 
-          status: newStatus
-        }
-      };
+      return { ...prev, [qId]: { ...prev[qId], status: newStatus } };
     });
 
     if (currentIdx < allQuestions.length - 1) {
       goToQuestion(currentIdx + 1);
     }
-  }, [currentQuestion, currentIdx, allQuestions, goToQuestion, isSubmitted]);
+  }, [allQuestions, currentIdx, goToQuestion, isSubmitted]);
 
   const markForReview = useCallback(() => {
-    if (isSubmitted || !currentQuestion) return;
-    const qId = currentQuestion.question_id.toString();
+    if (isSubmitted) return;
+    const currentEntry = allQuestions[currentIdx];
+    if (!currentEntry) return;
+    const qId = currentEntry.question.question_id.toString();
 
     setExamState((prev) => {
       const hasOption = prev[qId]?.selectedOption !== null;
       const newStatus: QuestionStatus = hasOption ? 'ANSWERED_MARKED' : 'MARKED';
-      return {
-        ...prev,
-        [qId]: { 
-          ...prev[qId], 
-          status: newStatus
-        }
-      };
+      return { ...prev, [qId]: { ...prev[qId], status: newStatus } };
     });
 
     if (currentIdx < allQuestions.length - 1) {
       goToQuestion(currentIdx + 1);
     }
-  }, [currentQuestion, currentIdx, allQuestions, goToQuestion, isSubmitted]);
+  }, [allQuestions, currentIdx, goToQuestion, isSubmitted]);
 
   const jumpToSubject = useCallback((subjectKey: string) => {
     if (isSubmitted) return;
@@ -251,19 +224,89 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [allQuestions, goToQuestion, isSubmitted]);
 
-  const submitExam = useCallback(() => {
-    if (window.confirm("Are you sure you want to submit your exam?")) {
+  // --- Submission Logic ---
+  const submitExamInternal = async () => {
+    if (isSubmitted) return;
+    setIsLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user found.");
+
+      let totalScore = 0;
+      const correctMark = examData?.exam_details.correct_answer_weightage || 4;
+      const negativeMark = parseFloat(examData?.exam_details.negative_marking || "1");
+
+      const responses = allQuestions.map(fq => {
+        const qId = fq.question.question_id;
+        const userAns = examState[qId]?.selectedOption;
+        const correctAns = fq.question.correct_answer;
+        const isCorrect = userAns === correctAns;
+        if (userAns !== null) {
+          if (isCorrect) totalScore += correctMark;
+          else totalScore -= negativeMark;
+        }
+        return {
+          question_id: qId,
+          selected_option: userAns,
+          is_correct: isCorrect,
+          time_spent_seconds: 0
+        };
+      });
+
+      const { data: attempt, error: aError } = await supabase
+        .from('attempts')
+        .insert({
+          user_id: user.id,
+          session_id: sessionId,
+          total_score: totalScore,
+          completed_at: new Date().toISOString()
+        })
+        .select().single();
+
+      if (aError) throw aError;
+
+      const finalResponses = responses.map(r => ({ ...r, attempt_id: attempt.id }));
+      const { error: rError } = await supabase.from('attempt_responses').insert(finalResponses);
+      if (rError) throw rError;
+
       setIsSubmitted(true);
+    } catch (err) {
+      console.error("Submission failed:", err);
+      alert("Failed to save results.");
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  };
+
+  const submitExam = useCallback(() => {
+    if (window.confirm("Submit exam?")) {
+      submitExamInternal();
+    }
+  }, [examData, examState, allQuestions, sessionId, isSubmitted]);
+
+  // --- Timer ---
+  useEffect(() => {
+    if (!isInitialized || isSubmitted) return;
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          submitExamInternal();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isInitialized, isSubmitted]);
 
   const value = {
     examData,
     allQuestions,
+    userProfile,
     currentIdx,
-    currentQuestion,
-    currentPart,
-    currentSubject,
+    currentQuestion: allQuestions[currentIdx]?.question || null,
+    currentPart: allQuestions[currentIdx]?.part || '',
+    currentSubject: allQuestions[currentIdx]?.subject || '',
     examState,
     timeLeft,
     isInitialized,
@@ -285,8 +328,6 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
 
 export const useExam = () => {
   const context = useContext(ExamContext);
-  if (context === undefined) {
-    throw new Error('useExam must be used within an ExamProvider');
-  }
+  if (context === undefined) throw new Error('useExam must be used within an ExamProvider');
   return context;
 };

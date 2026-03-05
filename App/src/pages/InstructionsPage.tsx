@@ -17,7 +17,15 @@ export const InstructionsPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchSession = async () => {
+    const initInstructions = async () => {
+      // 1. Check Auth
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      if (!authSession) {
+        navigate('/login');
+        return;
+      }
+
+      // 2. Fetch Session Info
       if (!id) return;
       const { data, error } = await supabase
         .from('exam_sessions')
@@ -31,8 +39,8 @@ export const InstructionsPage = () => {
       setLoading(false);
     };
 
-    fetchSession();
-  }, [id]);
+    initInstructions();
+  }, [id, navigate]);
 
   if (loading) {
     return (

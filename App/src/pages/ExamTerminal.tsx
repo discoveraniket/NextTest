@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import { useExam } from '../context/ExamContext';
 import { ExamHeader } from '../components/ExamHeader/ExamHeader';
 import { SubjectStrip } from '../components/SubjectStrip/SubjectStrip';
@@ -10,6 +11,7 @@ import { Loader2 } from 'lucide-react';
 
 export const ExamTerminal: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const {
     examData,
     allQuestions,
@@ -26,10 +28,19 @@ export const ExamTerminal: React.FC = () => {
   } = useExam();
 
   useEffect(() => {
-    if (id && !isInitialized) {
-      initializeSession(id);
-    }
-  }, [id, isInitialized, initializeSession]);
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/login');
+        return;
+      }
+      if (id && !isInitialized) {
+        initializeSession(id);
+      }
+    };
+    
+    checkAuth();
+  }, [id, isInitialized, initializeSession, navigate]);
 
   // Get unique subjects for the SubjectStrip
   const subjects = Array.from(new Set(allQuestions.map(q => `${q.part} - ${q.subject}`)));

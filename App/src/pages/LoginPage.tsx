@@ -1,16 +1,36 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, ShieldCheck } from 'lucide-react';
+import { LogIn, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For now, any login is "successful" to demo the flow
-    navigate('/dashboard');
+    setError(null);
+    setLoading(true);
+
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) throw authError;
+
+      if (data.user) {
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -30,15 +50,22 @@ export const LoginPage = () => {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-10 shadow-xl rounded-2xl border border-gray-100">
           <form className="space-y-6" onSubmit={handleLogin}>
+            {error && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 flex items-center gap-3">
+                <AlertCircle className="text-red-500 shrink-0" size={20} />
+                <p className="text-sm text-red-700 font-medium">{error}</p>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-bold text-gray-700 uppercase tracking-wide mb-1">
-                Roll Number / Email
+                Email Address
               </label>
               <input
-                type="text"
+                type="email"
                 required
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-blue focus:border-transparent outline-none transition-all"
-                placeholder="e.g. 000-420"
+                placeholder="e.g. user@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -61,9 +88,16 @@ export const LoginPage = () => {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-primary-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-blue transition-all active:scale-95 cursor-pointer"
+                disabled={loading}
+                className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-primary-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-blue transition-all active:scale-95 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                <LogIn size={18} /> SIGN IN TO EXAM
+                {loading ? (
+                  <Loader2 className="animate-spin" size={18} />
+                ) : (
+                  <>
+                    <LogIn size={18} /> SIGN IN TO EXAM
+                  </>
+                )}
               </button>
             </div>
           </form>

@@ -20,7 +20,7 @@ This allows you to add a new "JEE 2025" session by simply adding one row to `exa
 
 ### Phase 2: User Profile & History
 *   **`attempts` Table**: Every time a user clicks "Submit," we record a row here. The dashboard can then query `SELECT * FROM attempts WHERE user_id = current_user` to show history.
-*   **`profiles` Table**: Stores persistent user data like Roll Numbers and names, replacing hardcoded strings.
+*   **`profiles` Table**: Stores persistent user data like names, replacing hardcoded strings.
 
 ### Phase 3: Analytics & Insights (The "Gold" Layer)
 *   **`attempt_responses` Table**: This is the most critical table. It stores exactly what the user did for every question.
