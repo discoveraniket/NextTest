@@ -2,22 +2,25 @@ import React, { createContext, useContext, useState } from 'react';
 import { practiceDataService } from '../lib/practiceDataService';
 import type { PinnacleQuestion } from '../lib/practiceDataService';
 import { soundService } from '../lib/soundService';
+import { supabase } from '../lib/supabase';
 
 interface PracticeState {
   questions: PinnacleQuestion[];
+  originalQuestions: PinnacleQuestion[]; // For restoring chronological order
   currentIdx: number;
   selectedOption: string | null;
   isCorrect: boolean | null;
   showExplanation: boolean;
-  history: { [id: number]: { selected: string; correct: boolean } };
+  history: { [id: string]: { selected: string; correct: boolean } };
   isLoading: boolean;
-  currentSubject: string | null;
+  currentSubjectId: string | null;
   availableTopics: string[];
-  activeTopics: string[]; // Used as tags for filtering
+  activeTopics: string[];
+  isRandomized: boolean;
 }
 
 interface PracticeContextType extends PracticeState {
-  startPractice: (subject: string) => Promise<void>;
+  startPractice: (subjectId: string) => Promise<void>;
   nextQuestion: () => void;
   prevQuestion: () => void;
   skipQuestion: () => void;
@@ -25,36 +28,50 @@ interface PracticeContextType extends PracticeState {
   toggleExplanation: () => void;
   toggleTopicTag: (topic: string) => void;
   jumpToQuestion: (idx: number) => void;
+  toggleRandomize: () => void;
 }
 
 const PracticeContext = createContext<PracticeContextType | undefined>(undefined);
 
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 export const PracticeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<PracticeState>({
     questions: [],
+    originalQuestions: [],
     currentIdx: 0,
     selectedOption: null,
     isCorrect: null,
     showExplanation: false,
     history: {},
     isLoading: false,
-    currentSubject: null,
+    currentSubjectId: null,
     availableTopics: [],
     activeTopics: [],
+    isRandomized: false,
   });
 
-  const startPractice = async (subject: string) => {
-    setState((prev: PracticeState) => ({ ...prev, isLoading: true, currentSubject: subject }));
+  const startPractice = async (subjectId: string) => {
+    setState((prev) => ({ ...prev, isLoading: true, currentSubjectId: subjectId }));
     try {
       const [questions, topics] = await Promise.all([
-        practiceDataService.getQuestionsBySubject(subject),
-        practiceDataService.getTopicsForSubject(subject),
+        practiceDataService.getQuestionsBySubject(subjectId),
+        practiceDataService.getTopicsForSubject(subjectId),
       ]);
-      setState((prev: PracticeState) => ({
+      
+      setState((prev) => ({
         ...prev,
         questions,
+        originalQuestions: [...questions],
         availableTopics: topics,
-        activeTopics: [], // Initially no filter
+        activeTopics: [],
         currentIdx: 0,
         selectedOption: null,
         isCorrect: null,
@@ -63,24 +80,24 @@ export const PracticeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }));
     } catch (error) {
       console.error('Error starting practice:', error);
-      setState((prev: PracticeState) => ({ ...prev, isLoading: false }));
+      setState((prev) => ({ ...prev, isLoading: false }));
     }
   };
 
-  const selectOption = (option: string) => {
+  const selectOption = async (option: string) => {
     const currentQ = state.questions[state.currentIdx];
-    if (!currentQ || state.selectedOption) return; // Prevent double answering
+    if (!currentQ || state.selectedOption) return;
 
-    const correct = option.toLowerCase() === currentQ.answer.toLowerCase();
+    const correct = option.toLowerCase() === currentQ.correct_answer.toLowerCase();
     
-    // Play subtle feedback sounds
+    // Play feedback sounds
     if (correct) {
       soundService.playSuccess();
     } else {
       soundService.playFailure();
     }
 
-    setState((prev: PracticeState) => ({
+    setState((prev) => ({
       ...prev,
       selectedOption: option,
       isCorrect: correct,
@@ -90,6 +107,12 @@ export const PracticeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         [currentQ.id]: { selected: option, correct }
       }
     }));
+
+    // Log Telemetry (Async, don't wait)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      practiceDataService.logInteraction(session.user.id, currentQ.id, correct, option, 0, 0);
+    }
   };
 
   const nextQuestion = () => {
@@ -98,7 +121,7 @@ export const PracticeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const nextQ = state.questions[nextIdx];
       const prevSession = state.history[nextQ.id];
 
-      setState((prev: PracticeState) => ({
+      setState((prev) => ({
         ...prev,
         currentIdx: nextIdx,
         selectedOption: prevSession?.selected || null,
@@ -114,7 +137,7 @@ export const PracticeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const prevQ = state.questions[prevIdx];
       const prevSession = state.history[prevQ.id];
 
-      setState((prev: PracticeState) => ({
+      setState((prev) => ({
         ...prev,
         currentIdx: prevIdx,
         selectedOption: prevSession?.selected || null,
@@ -124,19 +147,38 @@ export const PracticeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const toggleRandomize = () => {
+    setState((prev) => {
+      const newRandomized = !prev.isRandomized;
+      const newQuestions = newRandomized 
+        ? shuffleArray(prev.originalQuestions) 
+        : [...prev.originalQuestions];
+      
+      return {
+        ...prev,
+        isRandomized: newRandomized,
+        questions: newQuestions,
+        currentIdx: 0,
+        selectedOption: null,
+        isCorrect: null,
+        showExplanation: false,
+      };
+    });
+  };
+
   const skipQuestion = () => {
     nextQuestion();
   };
 
   const toggleExplanation = () => {
-    setState((prev: PracticeState) => ({ ...prev, showExplanation: !prev.showExplanation }));
+    setState((prev) => ({ ...prev, showExplanation: !prev.showExplanation }));
   };
 
   const jumpToQuestion = (idx: number) => {
     if (idx >= 0 && idx < state.questions.length) {
       const q = state.questions[idx];
       const prevSession = state.history[q.id];
-      setState((prev: PracticeState) => ({
+      setState((prev) => ({
         ...prev,
         currentIdx: idx,
         selectedOption: prevSession?.selected || null,
@@ -147,11 +189,10 @@ export const PracticeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const toggleTopicTag = (topic: string) => {
-    setState((prev: PracticeState) => {
+    setState((prev) => {
       const newActive = prev.activeTopics.includes(topic)
         ? prev.activeTopics.filter(t => t !== topic)
         : [...prev.activeTopics, topic];
-      // Note: Filtering logic would happen here or in a derived state
       return { ...prev, activeTopics: newActive };
     });
   };
@@ -166,7 +207,8 @@ export const PracticeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       selectOption, 
       toggleExplanation, 
       toggleTopicTag,
-      jumpToQuestion
+      jumpToQuestion,
+      toggleRandomize
     }}>
       {children}
     </PracticeContext.Provider>

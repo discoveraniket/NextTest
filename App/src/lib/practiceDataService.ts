@@ -1,64 +1,113 @@
+import { supabase } from './supabase';
+
 export interface PinnacleQuestion {
-  id: number;
-  question: string;
-  exam_info: string;
+  id: string;
+  content: string;
   options: {
     a: string;
     b: string;
     c: string;
     d: string;
   };
-  answer: string;
-  explanation: string;
-}
-
-export interface PinnacleData {
-  metadata: any;
-  content: {
-    [subject: string]: {
-      [topic: string]: {
-        [page: string]: PinnacleQuestion[];
-      };
-    };
-  };
+  correct_answer: string;
+  explanation: string | null;
+  topic?: string | null;
+  subtopic?: string | null;
+  metadata?: any;
 }
 
 class PracticeDataService {
-  private data: PinnacleData | null = null;
-  private url = '/Pinnacle_Railway_f7a7588e.json';
+  async getSubjects(): Promise<{ id: string; name: string }[]> {
+    try {
+      // Use maybeSingle to avoid exceptions if result is empty or multiple
+      const { data: examData } = await supabase
+        .from('exams')
+        .select('id')
+        .eq('name', 'General Practice')
+        .maybeSingle();
 
-  async loadData(): Promise<PinnacleData> {
-    if (this.data) return this.data;
-    const response = await fetch(this.url);
-    if (!response.ok) throw new Error('Failed to load practice data');
-    this.data = await response.json();
-    return this.data!;
+      if (!examData) {
+        console.warn('Practice Exam not found in database.');
+        return [];
+      }
+
+      const { data: sessionData } = await supabase
+        .from('exam_sessions')
+        .select('id')
+        .eq('exam_id', examData.id)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+
+      if (!sessionData) {
+        console.warn('Active Practice Session not found.');
+        return [];
+      }
+
+      const { data: subjects, error } = await supabase
+        .from('subjects')
+        .select('id, name')
+        .eq('session_id', sessionData.id)
+        .order('display_order', { ascending: true });
+
+      if (error) throw error;
+      return subjects || [];
+    } catch (err) {
+      console.error('getSubjects critical failure:', err);
+      return [];
+    }
   }
 
-  async getSubjects(): Promise<string[]> {
-    const data = await this.loadData();
-    return Object.keys(data.content);
+  async getQuestionsBySubject(subjectId: string): Promise<PinnacleQuestion[]> {
+    const { data: questions, error } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('subject_id', subjectId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching practice questions:', error);
+      return [];
+    }
+
+    return (questions || []) as PinnacleQuestion[];
   }
 
-  async getQuestionsBySubject(subject: string): Promise<PinnacleQuestion[]> {
-    const data = await this.loadData();
-    const subjectContent = data.content[subject];
-    if (!subjectContent) return [];
+  async getTopicsForSubject(subjectId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('questions')
+      .select('topic')
+      .eq('subject_id', subjectId)
+      .not('topic', 'is', null);
 
-    const allQuestions: PinnacleQuestion[] = [];
-    Object.values(subjectContent).forEach(topicContent => {
-      Object.values(topicContent).forEach(pageQuestions => {
-        allQuestions.push(...pageQuestions);
-      });
+    if (error) {
+      console.error('Error fetching topics:', error);
+      return [];
+    }
+
+    const uniqueTopics = Array.from(new Set(data.map(q => q.topic))).filter(Boolean) as string[];
+    return uniqueTopics;
+  }
+
+  async logInteraction(
+    userId: string,
+    questionId: string,
+    isCorrect: boolean,
+    option: string,
+    timeOnQuestion: number,
+    timeOnExplanation: number
+  ) {
+    const { error } = await supabase.from('practice_telemetry').insert({
+      user_id: userId,
+      question_id: questionId,
+      is_correct: isCorrect,
+      selected_option: option,
+      time_on_question_ms: timeOnQuestion,
+      time_on_explanation_ms: timeOnExplanation,
+      interaction_type: 'answer'
     });
-    return allQuestions;
-  }
 
-  // Get unique topics for a subject to use as "tags"
-  async getTopicsForSubject(subject: string): Promise<string[]> {
-    const data = await this.loadData();
-    const subjectContent = data.content[subject];
-    return subjectContent ? Object.keys(subjectContent) : [];
+    if (error) console.error('Error logging telemetry:', error);
   }
 }
 

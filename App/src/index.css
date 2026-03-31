@@ -17,6 +17,12 @@
 }
 
 :root {
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border-light: #f1f5f9;
+  
   --primary-blue: #2c3e50;
   --header-bg: #f8f9fa;
   --sidebar-bg: #ffffff;
@@ -32,21 +38,35 @@
   --border-color: #dee2e6;
 }
 
+[data-theme='dark'] {
+  --bg-main: #0f172a;
+  --bg-card: #1e293b;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border-light: #334155;
+
+  --header-bg: #1e293b;
+  --sidebar-bg: #0f172a;
+  --text-main: #e2e8f0;
+  --border-color: #334155;
+  --btn-clear: #475569;
+}
+
 body {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f0f2f5;
-  color: var(--text-main);
-  /* Desktop stays fixed, mobile can scroll */
+  font-family: 'Inter', 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
   overflow-y: auto;
 }
 
 @media (min-width: 768px) {
   body:not(:has(.result-page)) {
-    overflow: hidden;
+    overflow: auto; /* Changed from hidden to auto for better usability across dashboards */
   }
 }
 
 #root {
-  height: 100vh;
+  min-height: 100vh;
 }

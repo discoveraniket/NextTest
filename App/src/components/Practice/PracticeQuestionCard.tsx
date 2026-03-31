@@ -1,107 +1,106 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, XCircle, Info, Bookmark, Share2 } from 'lucide-react';
-import type { PinnacleQuestion } from '../../lib/practiceDataService';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  CheckCircle2, 
+  XCircle, 
+  Lightbulb,
+  Tags
+} from "lucide-react";
+import type { PinnacleQuestion } from "../../lib/practiceDataService";
+import { usePractice } from "../../context/PracticeContext";
 
 interface PracticeQuestionCardProps {
   question: PinnacleQuestion;
-  selectedOption: string | null;
-  isCorrect: boolean | null;
-  showExplanation: boolean;
-  onSelect: (option: string) => void;
-  index: number;
 }
 
 export const PracticeQuestionCard: React.FC<PracticeQuestionCardProps> = ({
   question,
-  selectedOption,
-  isCorrect,
-  showExplanation,
-  onSelect,
-  index,
 }) => {
-  const options = question.options;
+  const { selectOption, selectedOption, isCorrect, showExplanation } = usePractice();
+
+  const options = [
+    { key: "a", text: (question.options as any).a },
+    { key: "b", text: (question.options as any).b },
+    { key: "c", text: (question.options as any).c },
+    { key: "d", text: (question.options as any).d },
+  ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -30 }}
-      className="max-w-4xl mx-auto w-full"
-    >
-      <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-[40px] shadow-2xl p-10 md:p-16 relative overflow-hidden">
-        {/* Aesthetic Background Detail */}
-        <div className="absolute -right-20 -top-20 w-64 h-64 bg-indigo-50 rounded-full blur-3xl opacity-60 pointer-events-none" />
+    <div className="relative group">
+      {/* Decorative Glows */}
+      <div className="absolute -inset-4 bg-gradient-to-tr from-indigo-500/10 via-purple-500/10 to-transparent blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 -z-10" />
+      
+      <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[32px] sm:rounded-[40px] p-6 sm:p-8 md:p-12 shadow-2xl overflow-hidden">
         
-        {/* Header/Tags */}
-        <div className="flex items-center justify-between gap-4 mb-12">
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 text-white px-5 py-2 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-200">
-              Question {index + 1}
-            </div>
-            {question.exam_info && (
-              <div className="bg-slate-100 text-slate-500 px-5 py-2 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-slate-200">
-                {question.exam_info}
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-3 text-slate-300">
-            <button className="hover:text-indigo-600 transition-colors"><Bookmark size={20} /></button>
-            <button className="hover:text-indigo-600 transition-colors"><Share2 size={20} /></button>
-          </div>
+        {/* Taxonomy Metadata */}
+        <div className="flex flex-wrap items-center gap-4 mb-10">
+           {(question.topic || question.subtopic) && (
+             <div className="flex items-center gap-2 bg-indigo-500/10 px-4 py-2 rounded-2xl border border-indigo-500/10">
+                <Tags size={14} className="text-indigo-400" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">{question.topic} {question.subtopic && `• ${question.subtopic}`}</span>
+             </div>
+           )}
+           {question.metadata?.exam_info && (
+             <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-2xl border border-white/5">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{question.metadata.exam_info}</span>
+             </div>
+           )}
         </div>
 
-        {/* Question Text */}
-        <h2 className="text-2xl md:text-3xl font-bold text-slate-800 leading-tight mb-12 tracking-tight">
-          {question.question}
-        </h2>
+        {/* Question Content */}
+        <div className="mb-12">
+          <h1 className="text-2xl md:text-3xl font-black text-white leading-tight tracking-tight">
+            {question.content}
+          </h1>
+        </div>
 
-        {/* Options */}
-        <div className="grid grid-cols-1 gap-5 mb-12">
-          {Object.entries(options).map(([key, value]) => {
-            const isSelected = selectedOption === key;
-            const isCorrectOption = key.toLowerCase() === question.answer.toLowerCase();
+        {/* Dynamic Options Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {options.map((opt) => {
+            const isSelected = selectedOption === opt.key;
+            const isCorrectOption = opt.key.toLowerCase() === question.correct_answer.toLowerCase();
             
-            let statusClasses = "border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/50";
-            if (isSelected) {
-              statusClasses = isCorrect 
-                ? "border-emerald-500 bg-emerald-50/50 shadow-lg shadow-emerald-100 ring-2 ring-emerald-500/20" 
-                : "border-rose-500 bg-rose-50/50 shadow-lg shadow-rose-100 ring-2 ring-rose-500/20";
-            } else if (showExplanation && isCorrectOption) {
-              statusClasses = "border-emerald-500 bg-emerald-50/50";
+            let statusStyles = "border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:border-white/20";
+            
+            if (selectedOption) {
+              if (isCorrectOption) {
+                statusStyles = "border-[3px] border-emerald-500 bg-emerald-500/10 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.2)]";
+              } else if (isSelected && !isCorrect) {
+                statusStyles = "border-[3px] border-rose-500 bg-rose-500/10 text-rose-400 shadow-[0_0_30px_rgba(244,63,94,0.2)] opacity-80";
+              } else {
+                statusStyles = "border border-white/5 bg-white/5 text-slate-600 opacity-40 grayscale pointer-events-none";
+              }
             }
 
             return (
               <motion.button
-                key={key}
-                whileHover={!selectedOption ? { x: 8 } : {}}
+                key={opt.key}
+                whileHover={!selectedOption ? { scale: 1.02 } : {}}
                 whileTap={!selectedOption ? { scale: 0.98 } : {}}
-                disabled={!!selectedOption}
-                onClick={() => onSelect(key)}
-                className={`flex items-center gap-6 p-6 md:p-8 rounded-3xl border-2 transition-all text-left group ${statusClasses}`}
+                onClick={() => selectOption(opt.key)}
+                className={`flex items-start gap-4 p-6 rounded-[32px] text-left transition-all relative group/opt overflow-hidden ${statusStyles}`}
               >
-                <div className={`w-12 h-12 flex items-center justify-center rounded-2xl text-lg font-black uppercase transition-all
-                  ${isSelected
-                    ? (isCorrect ? "bg-emerald-500 text-white" : "bg-rose-500 text-white")
-                    : (showExplanation && isCorrectOption ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-indigo-600 group-hover:text-white")
-                  }
-                `}>
-                  {key}
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-black uppercase text-sm
+                  ${isSelected ? 'bg-current text-white' : 'bg-white/10 group-hover/opt:bg-white/20'}`}>
+                  {opt.key}
                 </div>
-                <div className={`flex-1 text-lg font-semibold ${isSelected ? (isCorrect ? "text-emerald-700" : "text-rose-700") : "text-slate-600"}`}>
-                  {value}
-                </div>
-                {isSelected && (
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                    {isCorrect ? <CheckCircle2 className="text-emerald-500" /> : <XCircle className="text-rose-500" />}
-                  </motion.div>
+                <span className="text-lg font-bold mt-0.5 leading-relaxed">
+                  {opt.text}
+                </span>
+
+                {/* Status Icons */}
+                {selectedOption && isCorrectOption && (
+                  <CheckCircle2 className="absolute right-6 top-1/2 -translate-y-1/2 text-emerald-500" size={24} />
+                )}
+                {selectedOption && isSelected && !isCorrect && (
+                  <XCircle className="absolute right-6 top-1/2 -translate-y-1/2 text-rose-500" size={24} />
                 )}
               </motion.button>
             );
           })}
         </div>
 
-        {/* Explanation Section */}
+        {/* Concept & Explanation Engine */}
         <AnimatePresence>
           {showExplanation && (
             <motion.div
@@ -110,24 +109,31 @@ export const PracticeQuestionCard: React.FC<PracticeQuestionCardProps> = ({
               exit={{ opacity: 0, height: 0, marginTop: 0 }}
               className="overflow-hidden"
             >
-              <div className="bg-indigo-50/50 rounded-3xl p-8 md:p-10 border border-indigo-100">
-                <div className="flex items-center gap-3 mb-6 text-indigo-700 font-black uppercase tracking-widest text-xs">
-                  <Info size={16} /> Concept & Explanation
+              <div className="bg-indigo-500/10 rounded-[32px] p-8 border border-indigo-500/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-indigo-500 rounded-2xl shadow-lg shadow-indigo-500/20">
+                     <Lightbulb size={24} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-indigo-400 uppercase tracking-widest leading-none">Concept & Facts</h3>
+                    <p className="text-slate-500 text-xs mt-1 font-bold">In-depth Learning Insights</p>
+                  </div>
                 </div>
-                <p className="text-slate-600 text-lg leading-relaxed font-medium">
-                  {question.explanation}
-                </p>
-                {!isCorrect && selectedOption && (
-                   <div className="mt-6 pt-6 border-t border-indigo-100 flex items-center gap-2">
-                     <span className="text-sm font-bold text-slate-400">CORRECT ANSWER IS:</span>
-                     <span className="bg-emerald-500 text-white px-3 py-1 rounded-lg text-sm font-black uppercase">{question.answer}</span>
-                   </div>
+                {question.explanation && (
+                  <p className="text-slate-300 text-lg leading-relaxed font-medium">
+                    {question.explanation}
+                  </p>
+                )}
+                {!question.explanation && (
+                  <p className="text-slate-500 italic text-lg">
+                    No detailed explanation available for this concept yet.
+                  </p>
                 )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-    </motion.div>
+    </div>
   );
 };
