@@ -52,16 +52,13 @@
 ### Phase 2: User History & Experience (Current Focus)
 - [ ] **Review Mode**: Allow users to click on a past attempt to see their "Question Paper" breakdown.
 - [ ] **Session Recovery**: Auto-save progress to LocalStorage to prevent data loss on accidental refresh.
-- [ ] **Leaderboard**: Optional public ranking for specific exam sessions.
 
 ### Phase 3: Analytics & Insights
-- [ ] **Visual Trends**: Performance charts showing growth across multiple sessions.
 - [ ] **Time Tracking**: Log `time_spent_seconds` per question to identify performance bottlenecks.
 - [ ] **Subject Weakness Report**: Automated alerts for subjects with < 50% accuracy.
 
 ### Phase 4: Advanced Content
 - [ ] **Image/Diagram Support**: Support for URL-based images in `QuestionCanvas`.
-- [ ] **Numerical Questions**: Add support for non-MCQ questions with a virtual keypad.
 - [ ] **Multiple Exam Sets**: Add more diverse question sets (NEET, RRB, GATE).
 
 ---

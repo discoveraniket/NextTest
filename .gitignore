@@ -29,3 +29,11 @@ Desktop.ini
 # GEMINI related files
 GEMINI.md
 runGeminiAdmin.bat
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+Pinnacle_Railway_f7a7588e.json

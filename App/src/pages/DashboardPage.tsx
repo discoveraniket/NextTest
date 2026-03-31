@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Calendar, PlayCircle, Clock, FileText, UserCircle, Loader2, LogOut } from 'lucide-react';
+import { Calendar, PlayCircle, Clock, FileText, UserCircle, Loader2, LogOut, Brain, LayoutGrid, Trophy } from 'lucide-react';
 
 interface ExamSession {
   id: string;
@@ -120,6 +120,41 @@ export const DashboardPage = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {/* Practice MCQ Card */}
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex flex-col group transition-all hover:-translate-y-1 hover:shadow-2xl">
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-6 text-white">
+              <div className="bg-white/20 w-fit px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3">Learning Portal</div>
+              <h2 className="text-2xl font-black mb-1 leading-tight">MCQ Practice Laboratory</h2>
+              <div className="flex items-center gap-2 text-sm opacity-80">
+                <Brain size={14} /> Subject-wise Practice
+              </div>
+            </div>
+            
+            <div className="p-6 flex-1 bg-white">
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                  <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1 flex items-center gap-1">
+                    <LayoutGrid size={10} /> Mode
+                  </div>
+                  <div className="text-sm font-bold text-gray-700">Adaptive Learning</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                  <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1 flex items-center gap-1">
+                    <Trophy size={10} /> Goal
+                  </div>
+                  <div className="text-sm font-bold text-gray-700">Concept Mastery</div>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => navigate('/practice')}
+                className="w-full bg-indigo-600 text-white py-3 rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all hover:bg-indigo-700 active:scale-95 cursor-pointer"
+              >
+                <PlayCircle size={20} /> Enter Practice Mode
+              </button>
+            </div>
+          </div>
+
           {sessions.map((session) => (
             <div key={session.id} className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex flex-col group transition-all hover:-translate-y-1 hover:shadow-2xl">
               <div className="bg-gradient-to-br from-primary-blue to-blue-800 p-6 text-white">
