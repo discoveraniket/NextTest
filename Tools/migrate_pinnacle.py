@@ -1,6 +1,7 @@
 import os
 import json
 import hashlib
+import time
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -17,8 +18,21 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 JSON_FILE = "Pinnacle_Railway_f7a7588e.json"
 CONTEXT_NAME = "Pinnacle Railway Professional"
+START_FROM_PAGE = None # "page_609"  # Start migration from this page onwards
 
 s_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+def execute_with_retry(func, max_retries=3, delay=1):
+    """Execute a function with retry on exceptions."""
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except Exception as e:
+            if attempt < max_retries - 1:
+                print(f"      ⚠️ Attempt {attempt+1} failed: {e}. Retrying in {delay}s...")
+                time.sleep(delay)
+            else:
+                raise e
 
 def get_content_hash(content, options):
     """Creates a unique hash for a question based on its text and options."""
@@ -26,41 +40,41 @@ def get_content_hash(content, options):
     return hashlib.md5(full_text.encode()).hexdigest()
 
 def get_or_create_context():
-    res = s_client.table('question_contexts').select('*').eq('name', CONTEXT_NAME).execute()
+    res = execute_with_retry(lambda: s_client.table('question_contexts').select('*').eq('name', CONTEXT_NAME).execute())
     if res.data:
         return res.data[0]['id']
     
-    res = s_client.table('question_contexts').insert({
+    res = execute_with_retry(lambda: s_client.table('question_contexts').insert({
         'name': CONTEXT_NAME,
         'type': 'book',
         'description': 'Migrated from Pinnacle Railway MCQ JSON'
-    }).execute()
+    }).execute())
     return res.data[0]['id']
 
 def get_or_create_practice_session():
     # 1. Ensure 'General Practice' Exam exists
-    res = s_client.table('exams').select('*').eq('name', 'General Practice').execute()
+    res = execute_with_retry(lambda: s_client.table('exams').select('*').eq('name', 'General Practice').execute())
     if res.data:
         exam_id = res.data[0]['id']
     else:
-        res = s_client.table('exams').insert({
+        res = execute_with_retry(lambda: s_client.table('exams').insert({
             'name': 'General Practice',
             'category': 'practice',
             'description': 'Vast pool for subject-wise mastery'
-        }).execute()
+        }).execute())
         exam_id = res.data[0]['id']
     
     # 2. Ensure active practice session exists
-    res = s_client.table('exam_sessions').select('*').eq('exam_id', exam_id).execute()
+    res = execute_with_retry(lambda: s_client.table('exam_sessions').select('*').eq('exam_id', exam_id).execute())
     if res.data:
         return res.data[0]['id']
     
-    res = s_client.table('exam_sessions').insert({
+    res = execute_with_retry(lambda: s_client.table('exam_sessions').insert({
         'exam_id': exam_id,
         'year': 2024,
         'duration_minutes': 0, # Untimed
         'is_active': True
-    }).execute()
+    }).execute())
     return res.data[0]['id']
 
 def migrate():
@@ -77,25 +91,30 @@ def migrate():
     session_id = get_or_create_practice_session()
     
     content = data.get('content', {})
+    started = False
     
     for subject_name, topics in content.items():
         print(f"📚 Processing Subject: {subject_name}")
         
         # Ensure Subject exists for this session
-        sub_res = s_client.table('subjects').select('*').eq('session_id', session_id).eq('name', subject_name).execute()
+        sub_res = execute_with_retry(lambda: s_client.table('subjects').select('*').eq('session_id', session_id).eq('name', subject_name).execute())
         if sub_res.data:
             subject_id = sub_res.data[0]['id']
         else:
-            sub_res = s_client.table('subjects').insert({
+            sub_res = execute_with_retry(lambda: s_client.table('subjects').insert({
                 'session_id': session_id,
                 'name': subject_name
-            }).execute()
+            }).execute())
             subject_id = sub_res.data[0]['id']
 
         for topic_name, pages in topics.items():
             print(f"  🏷️ Topic: {topic_name}")
             
             for page_name, questions in pages.items():
+                if not started and page_name != START_FROM_PAGE:
+                    continue
+                started = True
+                
                 # Some have "Subtopic" as page_name, others just a number
                 subtopic = page_name if not page_name.isdigit() else None
                 
@@ -113,7 +132,7 @@ def migrate():
                     q_hash = get_content_hash(content, options)
                     
                     # Check if exists
-                    check = s_client.table('questions').select('*').eq('subject_id', subject_id).filter('metadata->>content_hash', 'eq', q_hash).execute()
+                    check = execute_with_retry(lambda: s_client.table('questions').select('*').eq('subject_id', subject_id).filter('metadata->>content_hash', 'eq', q_hash).execute())
                     
                     if check.data:
                         # Already exists, skip or update? User said "cautious not to make duplicate"
@@ -137,7 +156,8 @@ def migrate():
                     }
                     
                     try:
-                        s_client.table('questions').insert(new_q).execute()
+                        execute_with_retry(lambda: s_client.table('questions').insert(new_q).execute())
+                        time.sleep(0.1)  # Small delay to avoid rate limits
                     except Exception as e:
                         print(f"      ⚠️ Failed to insert question: {e}")
 
