@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogIn, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -46,51 +47,55 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-[var(--bg-main)] flex flex-col justify-center py-12 px-6 lg:px-8 font-sans transition-colors duration-300">
+      <div className="absolute top-8 right-8">
+        <ThemeToggle />
+      </div>
+      
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="flex justify-center mb-4">
-          <div className="bg-primary-blue p-3 rounded-2xl shadow-lg">
+          <div className="bg-primary-blue p-4 rounded-2xl shadow-xl shadow-blue-500/20">
             <ShieldCheck size={40} className="text-white" />
           </div>
         </div>
-        <h2 className="text-3xl font-black text-gray-900 tracking-tight">NexTest Portal</h2>
-        <p className="mt-2 text-sm text-gray-600 font-medium">
+        <h2 className="text-3xl font-black text-[var(--text-primary)] tracking-tight">NexTest Portal</h2>
+        <p className="mt-2 text-sm text-[var(--text-secondary)] font-medium">
           Digital Examination & Assessment System
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-10 shadow-xl rounded-2xl border border-gray-100">
+        <div className="bg-[var(--bg-card)] py-10 px-10 shadow-2xl rounded-3xl border border-slate-100 dark:border-slate-800 transition-all duration-300">
           <form className="space-y-6" onSubmit={handleLogin}>
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 flex items-center gap-3">
-                <AlertCircle className="text-red-500 shrink-0" size={20} />
-                <p className="text-sm text-red-700 font-medium">{error}</p>
+              <div className="bg-rose-500/10 border-l-4 border-rose-500 p-4 flex items-center gap-3 rounded-r-lg">
+                <AlertCircle className="text-rose-500 shrink-0" size={20} />
+                <p className="text-sm text-rose-600 dark:text-rose-400 font-bold">{error}</p>
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-bold text-gray-700 uppercase tracking-wide mb-1">
-                Email Address
+            <div className="space-y-1">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Access Identifier
               </label>
               <input
                 type="email"
                 required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-blue focus:border-transparent outline-none transition-all"
-                placeholder="e.g. user@example.com"
+                className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-[var(--bg-input)] text-[var(--text-primary)] focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                placeholder="email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-gray-700 uppercase tracking-wide mb-1">
-                Password
+            <div className="space-y-1">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Security Key
               </label>
               <input
                 type="password"
                 required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-blue focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-[var(--bg-input)] text-[var(--text-primary)] focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -101,32 +106,32 @@ export const LoginPage = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-primary-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-blue transition-all active:scale-95 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full flex justify-center items-center gap-3 py-4 px-4 border border-transparent rounded-xl shadow-lg shadow-blue-500/25 text-sm font-black text-white bg-primary-blue hover:bg-blue-700 hover:-translate-y-0.5 focus:outline-none transition-all active:scale-95 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed uppercase tracking-widest"
               >
                 {loading ? (
                   <Loader2 className="animate-spin" size={18} />
                 ) : (
                   <>
-                    <LogIn size={18} /> SIGN IN
+                    <LogIn size={18} /> Authenticate
                   </>
                 )}
               </button>
             </div>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
+                <div className="w-full border-t border-slate-100 dark:border-slate-800"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-400 uppercase font-bold text-[10px] tracking-widest">Authorized Access Only</span>
+              <div className="relative flex justify-center text-[10px]">
+                <span className="px-3 bg-[var(--bg-card)] text-slate-400 font-black uppercase tracking-[0.3em]">Authorized Access Only</span>
               </div>
             </div>
           </div>
         </div>
-        <p className="mt-8 text-center text-xs text-gray-400 font-medium">
-          &copy; 2026 NexTest Assessment Solutions. All rights reserved.
+        <p className="mt-10 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+          &copy; 2026 NexTest Intelligence Systems
         </p>
       </div>
     </div>

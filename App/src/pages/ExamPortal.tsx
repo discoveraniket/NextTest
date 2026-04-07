@@ -44,7 +44,7 @@ export const ExamPortal = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-slate-800">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-main)] text-[var(--text-primary)] transition-colors duration-300">
         <Loader2 className="animate-spin mr-3 text-indigo-600" size={32} />
         <span className="font-bold uppercase tracking-widest text-xs">Synchronizing Test Sets...</span>
       </div>
@@ -137,9 +137,9 @@ export const ExamPortal = () => {
           ))}
 
           {sessions.length === 0 && (
-            <div className="col-span-full bg-white p-24 rounded-[40px] border border-dashed border-slate-200 text-center">
-              <Trophy size={48} className="mx-auto text-slate-200 mb-6" />
-              <p className="text-slate-400 text-xl font-bold italic">No examination sessions are currently active.</p>
+            <div className="col-span-full bg-[var(--bg-card)] p-24 rounded-[40px] border border-dashed border-slate-200 dark:border-slate-800 text-center">
+              <Trophy size={48} className="mx-auto text-slate-200 dark:text-slate-700 mb-6" />
+              <p className="text-[var(--text-secondary)] text-xl font-bold italic">No examination sessions are currently active.</p>
             </div>
           )}
         </div>

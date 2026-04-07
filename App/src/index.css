@@ -18,11 +18,18 @@
   --color-status-answered-marked: #9c27b0;
   --color-text-main: #333333;
   --color-border-color: #dee2e6;
+  
+  /* Semantic Colors */
+  --color-bg-base: var(--bg-main);
+  --color-bg-card: var(--bg-card);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
 }
 
 :root {
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
+  --bg-input: #ffffff;
   --text-primary: #0f172a;
   --text-secondary: #64748b;
   --border-light: #f1f5f9;
@@ -45,6 +52,7 @@
 [data-theme='dark'] {
   --bg-main: #0f172a;
   --bg-card: #1e293b;
+  --bg-input: #334155;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --border-light: #334155;
@@ -61,7 +69,7 @@ body {
   font-family: 'Inter', 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: var(--bg-main);
   color: var(--text-primary);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-y: auto;
 }
 

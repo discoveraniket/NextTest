@@ -81,7 +81,7 @@ export const DashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white text-slate-800">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-main)] text-[var(--text-primary)] transition-colors duration-300">
         <Loader2 className="animate-spin mr-3 text-indigo-600" size={32} />
         <span className="font-bold uppercase tracking-widest text-xs">Authenticating Portal...</span>
       </div>

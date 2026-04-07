@@ -44,20 +44,20 @@ export const InstructionsPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <Loader2 className="animate-spin text-primary-blue" size={40} />
+      <div className="flex items-center justify-center h-screen bg-[var(--bg-main)] transition-colors duration-300">
+        <Loader2 className="animate-spin text-indigo-600" size={40} />
       </div>
     );
   }
 
-  if (!session) return <div>Session not found</div>;
+  if (!session) return <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] flex items-center justify-center font-bold">Session not found</div>;
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-[var(--bg-main)] font-sans transition-colors duration-300">
       {/* Header */}
-      <div className="bg-primary-blue text-white py-4 px-6 shadow-md flex items-center justify-between">
+      <div className="bg-primary-blue text-white py-5 px-8 shadow-lg flex items-center justify-between">
         <h1 className="text-xl font-black uppercase tracking-tight italic">Candidate Instructions</h1>
-        <div className="text-xs bg-white/20 px-3 py-1 rounded font-bold uppercase">{session.exams.name}</div>
+        <div className="text-[10px] bg-white/20 px-3 py-1 rounded-lg border border-white/10 font-black uppercase tracking-widest">{session.exams.name}</div>
       </div>
 
       <div className="max-w-4xl mx-auto p-6 md:p-12">
