@@ -39,10 +39,10 @@ export const PracticeTerminal = () => {
 
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
+      <div className="min-h-screen bg-[var(--bg-main)] flex flex-col items-center justify-center text-[var(--text-primary)]">
         <Zap className="mb-6 text-indigo-500 animate-pulse" size={64} />
         <h2 className="text-3xl font-black uppercase tracking-tighter italic">Initialising Neural Link...</h2>
-        <p className="text-slate-500 font-bold mt-4">Connecting to Master Question Cluster</p>
+        <p className="text-[var(--text-secondary)] font-bold mt-4">Connecting to Master Question Cluster</p>
       </div>
     );
   }
@@ -50,8 +50,8 @@ export const PracticeTerminal = () => {
   return (
     <div className={`min-h-screen transition-all duration-700 font-sans overflow-hidden ${
       isZenMode 
-        ? 'bg-slate-950 text-white' 
-        : 'bg-[#f8fafc] dark:bg-slate-950 text-slate-900 dark:text-white'
+        ? 'bg-slate-950 text-white dark' 
+        : 'bg-[var(--bg-main)] text-[var(--text-primary)]'
     }`}>
       
       {/* Dynamic Header (hidden in Zen) */}

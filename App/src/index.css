@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Allow manual dark mode toggle with .dark class */
+@custom-variant dark (&:where(.dark, .dark *));
+
+
 @theme {
   --color-primary-blue: #2c3e50;
   --color-header-bg: #f8f9fa;
